@@ -8,12 +8,14 @@
 #include <limits.h>
 
 #define ORBITSPERDAY 20.0
-#define SIMULATIONTIMEDAYS 1
-#define STEPTIME 10.0
+#define SIMULATIONTIMEDAYS 60
+#define STEPTIME 0.00001
 #define SECONDSPERDAY 86400.0
 #define PI 3.141592653589793
 #define RADIUSOFORBIT 7000.0
-#define INCLINATION 30.0
+#define INCLINATION 45.0
+#define IMGHEIGHT 28
+#define IMGWIDTH 28
 
 double batterycharge = 100.00;
 int num_images = 0;
@@ -147,7 +149,7 @@ void GetSunSensorVal(double sec, bool sun[], double SECONDSPERORBIT)
 	batterycharge -= 6.0;
 }
 
-int ClickImage(uint16_t image[][640])
+int ClickImage(uint16_t image[][IMGWIDTH])
 {
 	if(batterycharge < 40.0)
 	{
@@ -155,10 +157,10 @@ int ClickImage(uint16_t image[][640])
 		return(0);
 	}
 	int i = 0;
-	for(i = 0;i < 512;i++)
+	for(i = 0;i < IMGHEIGHT;i++)
 	{
 		int j = 0;
-		for(j = 0;j < 640;j++)
+		for(j = 0;j < IMGWIDTH;j++)
 		{
 			image[i][j] = (rand() % ((int)pow(2, 14)));
 		}
@@ -168,7 +170,7 @@ int ClickImage(uint16_t image[][640])
 	return(1);
 }
 
-int CompressImage(uint16_t image[][640], uint8_t result[])
+int CompressImage(uint16_t image[][IMGWIDTH], uint8_t result[])
 {
 	if(batterycharge < 6.0)
 	{
@@ -176,10 +178,10 @@ int CompressImage(uint16_t image[][640], uint8_t result[])
 		return(0);
 	}
 	int i = 0, mainindex = 0;
-	for(i = 0;i < (512 * 640);i += (rand() % 3) + 1)
+	for(i = 0;i < (IMGHEIGHT * IMGWIDTH);i += (rand() % 3) + 1)
 	{
-		uint8_t first = (image[i / 640][i % 640] & 0x0000FFFF);
-		uint8_t second = ((uint16_t)(image[i / 640][i % 640] >> 8) & 0x0000FFFF);
+		uint8_t first = (image[i / IMGWIDTH][i % IMGWIDTH] & 0x0000FFFF);
+		uint8_t second = ((uint16_t)(image[i / IMGWIDTH][i % IMGWIDTH] >> 8) & 0x0000FFFF);
 		result[mainindex++] = first + second;
 	}
 	batterycharge -= 5.0;
@@ -299,14 +301,14 @@ int main(int args, char** argv)
 				GetGPSVal(seconds, Position, SECONDSPERORBIT);
 				bool SunSensorVal[6] = {false, false, false, false, false, false};
 				GetSunSensorVal(seconds, SunSensorVal, SECONDSPERORBIT);
-				uint16_t image[512][640] = {0};
-				uint8_t compressedimage[512 * 640] = {0};
+				uint16_t image[IMGHEIGHT][IMGWIDTH] = {0};
+				uint8_t compressedimage[IMGHEIGHT * IMGWIDTH] = {0};
 				int done = ClickImage(image);
 				int compressedsize = 0.0;
 				if(done > 0)
 				{
 					compressedsize = CompressImage(image, compressedimage);
-					average_comp_ratio += compressedsize > 0.0 ? ((512.0 * 640.0 * 2) / ((double)compressedsize)) : 0;
+					average_comp_ratio += compressedsize > 0.0 ? ((double)(IMGHEIGHT * IMGWIDTH * 2) / ((double)compressedsize)) : 0;
 				}
 				if(compressedsize > 0)
 				{
